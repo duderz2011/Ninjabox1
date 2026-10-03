@@ -151,21 +151,6 @@ class MainMobileActivity : FragmentActivity() {
             return
         }
 
-        if (savedInstanceState == null) {
-            UserPreferences.currentProvider?.let {
-                navController.navigate(
-                    R.id.home,
-                    null,
-                    navOptions {
-                        launchSingleTop = true
-                        popUpTo(R.id.providers) {
-                            inclusive = true
-                        }
-                    }
-                )
-            }
-        }
-
         viewModel.checkUpdate()
 
         binding.bnvMain.setupWithNavController(navController)
@@ -336,8 +321,8 @@ class MainMobileActivity : FragmentActivity() {
                 null,
                 navOptions {
                     launchSingleTop = true
-                    popUpTo(R.id.providers) {
-                        inclusive = true
+                    popUpTo(R.id.home) {
+                        inclusive = false
                     }
                 }
             )
