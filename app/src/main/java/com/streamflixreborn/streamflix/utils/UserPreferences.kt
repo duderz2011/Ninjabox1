@@ -61,25 +61,21 @@ object UserPreferences {
     }
 
 
+    /**
+     * NinjaBox is a single native catalogue, not a provider chooser.
+     * TMDb supplies the catalogue/metadata while TmdbProvider resolves
+     * playable servers/extractors silently behind the native UI.
+     */
     var currentProvider: Provider?
-        get() {
-            val providerName = Key.CURRENT_PROVIDER.getString()
-            if (providerName?.startsWith("TMDb (") == true && providerName.endsWith(")")) {
-                val lang = providerName.substringAfter("TMDb (").substringBefore(")")
-                return TmdbProvider(lang)
-            }
-            return Provider.providers.keys.find { it.name == providerName }
-        }
+        get() = TmdbProvider("en")
         set(value) {
-            // CRITICO: Resetta l'istanza del database prima di cambiare provider
-            // per forzare la creazione di un nuovo database file corretto.
+            // Keep the provider fixed for NinjaBox. We still reset/schedule here so
+            // existing code paths that assign a provider remain harmless.
             AppDatabase.resetInstance()
-
-            Key.CURRENT_PROVIDER.setString(value?.name)
+            Key.CURRENT_PROVIDER.setString("TMDb (en)")
             runCatching {
-                ArtworkRepairScheduler.schedule(StreamFlixApp.instance, value)
+                ArtworkRepairScheduler.schedule(StreamFlixApp.instance, TmdbProvider("en"))
             }
-            // Notify all ViewModels that the provider has changed
             ProviderChangeNotifier.notifyProviderChanged()
         }
 
