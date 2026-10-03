@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - ninjabox-integration
+      - ninjabox-clipbox-parity
     paths:
       - 'app/**'
       - 'navigation/**'
