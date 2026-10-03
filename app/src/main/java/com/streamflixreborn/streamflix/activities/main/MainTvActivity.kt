@@ -16,7 +16,8 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.bumptech.glide.Glide
 import com.tanasi.navigation.widget.setupWithNavController
-import com.streamflixreborn.streamflix.BuildConfig\nimport com.streamflixreborn.streamflix.auth.NinjaGateSession
+import com.streamflixreborn.streamflix.BuildConfig
+import com.streamflixreborn.streamflix.auth.NinjaGateSession
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.ActivityMainTvBinding
