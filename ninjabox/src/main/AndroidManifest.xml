@@ -8,11 +8,11 @@
 
     <application
         android:allowBackup="true"
-        android:banner="@drawable/ninjabox_mark"
-        android:icon="@drawable/ninjabox_mark"
+        android:banner="@drawable/ninja_logo"
+        android:icon="@drawable/ninja_logo"
         android:label="NinjaBox"
-        android:logo="@drawable/ninjabox_mark"
-        android:roundIcon="@drawable/ninjabox_mark"
+        android:logo="@drawable/ninja_logo"
+        android:roundIcon="@drawable/ninja_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.NinjaBox">
 
