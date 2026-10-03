@@ -1,0 +1,36 @@
+name: Export Android Build Tools
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ninjabox-clipbox-parity
+    paths:
+      - .github/workflows/export-android-build-tools.yml
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Locate build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          BT="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          echo "BT=$BT" >> "$GITHUB_ENV"
+          echo "$BT"
+      - name: Package signer tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/lib
+          cp "$BT/apksigner" out/
+          cp "$BT/zipalign" out/
+          cp "$BT/lib/apksigner.jar" out/lib/
+          chmod +x out/apksigner out/zipalign
+      - name: Upload build tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-signing-tools
+          path: out
+          retention-days: 1
