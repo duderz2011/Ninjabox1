@@ -1,0 +1,54 @@
+name: NinjaBox Cleanroom APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ninjabox-hdo-cleanroom
+    paths:
+      - 'ninjabox/**'
+      - 'settings.gradle'
+      - 'build.gradle'
+      - '.github/workflows/ninjabox-cleanroom.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Create local.properties
+        shell: bash
+        run: |
+          cat > local.properties <<EOF
+          sdk.dir=$ANDROID_HOME
+          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          EOF
+
+      - name: Make Gradle executable
+        run: chmod +x gradlew
+
+      - name: Build clean NinjaBox APK
+        run: ./gradlew :ninjabox:assembleDebug --stacktrace
+
+      - name: Collect APK
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cp ninjabox/build/outputs/apk/debug/ninjabox-debug.apk artifacts/NinjaBox-cleanroom-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NinjaBox-cleanroom-debug
+          path: artifacts/NinjaBox-cleanroom-debug.apk
+          retention-days: 14
