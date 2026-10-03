@@ -27,6 +27,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.activities.tools.BypassWebViewActivity
+import com.streamflixreborn.streamflix.auth.NinjaGateSession
 import com.streamflixreborn.streamflix.databinding.ActivityMainMobileBinding
 import com.streamflixreborn.streamflix.fragments.player.PlayerMobileFragment
 import com.streamflixreborn.streamflix.providers.Cine24hProvider
@@ -102,6 +103,8 @@ class MainMobileActivity : FragmentActivity() {
         setTheme(ThemeManager.mobileThemeRes(UserPreferences.selectedTheme))
 
         super.onCreate(savedInstanceState)
+
+        if (!NinjaGateSession.ensureAuthorized(this)) return
 
         AnimeOnlineNinjaProvider.init(this)
         Cine24hProvider.init(this)

@@ -3,11 +3,16 @@ package com.streamflixreborn.streamflix
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import java.security.Security
 import org.conscrypt.Conscrypt
 import com.streamflixreborn.streamflix.database.AppDatabase
+import com.streamflixreborn.streamflix.auth.NinjaGateActivity
+import com.streamflixreborn.streamflix.auth.NinjaGateSession
+import com.streamflixreborn.streamflix.activities.main.MainMobileActivity
+import com.streamflixreborn.streamflix.activities.main.MainTvActivity
 import com.streamflixreborn.streamflix.providers.AniWorldProvider
 import com.streamflixreborn.streamflix.providers.SerienStreamProvider
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
@@ -41,7 +46,19 @@ class StreamFlixApp : Application() {
         super.onCreate()
         instance = this
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                if ((activity is MainMobileActivity || activity is MainTvActivity) &&
+                    !NinjaGateSession.authorized
+                ) {
+                    activity.startActivity(
+                        Intent(activity, NinjaGateActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            data = activity.intent?.data
+                        }
+                    )
+                    activity.finish()
+                }
+            }
 
             override fun onActivityStarted(activity: Activity) = Unit
 
