@@ -40,29 +40,28 @@
 
         <activity
             android:name=".auth.NinjaGateActivity"
-            android:exported="false"
-            android:theme="@style/AppTheme.Mobile" />
-
-        <activity
-            android:name=".activities.main.MainMobileActivity"
-            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="true"
-            android:supportsPictureInPicture="true"
-            android:theme="@style/AppTheme.SplashScreen">
+            android:theme="@style/AppTheme.Mobile">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="streamflix" android:host="resolve"/>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="streamflix" android:host="resolve" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".activities.main.MainMobileActivity"
+            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/AppTheme.SplashScreen" />
 
         <activity
             android:name=".activities.tools.QrScannerActivity"
