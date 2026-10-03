@@ -34,6 +34,15 @@ jobs:
           TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           EOF
 
+      - name: Build supplied NinjaBox logo
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ninjabox/src/main/res/drawable-nodpi
+          cat ninjabox/branding/ninja_logo_b64_0.txt               ninjabox/branding/ninja_logo_b64_1.txt               ninjabox/branding/ninja_logo_b64_2.txt               ninjabox/branding/ninja_logo_b64_3.txt               ninjabox/branding/ninja_logo_b64_4.txt               ninjabox/branding/ninja_logo_b64_5.txt             | tr -d '\n\r '             | base64 --decode > ninjabox/src/main/res/drawable-nodpi/ninja_logo.png
+          file ninjabox/src/main/res/drawable-nodpi/ninja_logo.png
+          test -s ninjabox/src/main/res/drawable-nodpi/ninja_logo.png
+
       - name: Make Gradle executable
         run: chmod +x gradlew
 
