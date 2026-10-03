@@ -87,12 +87,6 @@ class MainTvActivity : FragmentActivity() {
             return
         }
 
-        if (savedInstanceState == null) {
-            UserPreferences.currentProvider?.let {
-                navController.navigate(R.id.home)
-            }
-        }
-
         binding.navMain.setupWithNavController(navController)
         updateNavigationVisibility()
 
@@ -105,11 +99,10 @@ class MainTvActivity : FragmentActivity() {
                 val header = ContentHeaderMenuMainTvBinding.bind(this)
 
                 Glide.with(context)
-                    .load(UserPreferences.currentProvider?.logo?.takeIf { it.isNotEmpty() } ?: R.drawable.ic_provider_default_logo)
-                    .error(R.drawable.ic_provider_default_logo)
+                    .load(R.mipmap.ic_launcher)
                     .into(header.ivNavigationHeaderIcon)
-                header.tvNavigationHeaderTitle.text = UserPreferences.currentProvider?.name
-                header.tvNavigationHeaderSubtitle.text = getString(R.string.main_menu_change_provider)
+                header.tvNavigationHeaderTitle.text = "NinjaBox"
+                header.tvNavigationHeaderSubtitle.text = "NinjaTreats"
                 val palette = ThemeManager.palette(UserPreferences.selectedTheme)
                 header.tvNavigationHeaderTitle.setTextColor(palette.tvHeaderPrimary)
                 header.tvNavigationHeaderSubtitle.setTextColor(palette.tvHeaderSecondary)
@@ -124,10 +117,7 @@ class MainTvActivity : FragmentActivity() {
                     header.tvNavigationHeaderSubtitle.visibility = View.GONE
                 }
 
-                setOnClickListener {
-                    // Navigazione manuale per evitare dipendenza da Safe Args Directions non generate
-                    navController.navigate(R.id.providers)
-                }
+                setOnClickListener(null)
             }
 
             when (destination.id) {
@@ -222,8 +212,8 @@ class MainTvActivity : FragmentActivity() {
                 null,
                 navOptions {
                     launchSingleTop = true
-                    popUpTo(R.id.providers) {
-                        inclusive = true
+                    popUpTo(R.id.home) {
+                        inclusive = false
                     }
                 }
             )
