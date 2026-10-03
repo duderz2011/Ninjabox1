@@ -1,4 +1,5 @@
 name: NinjaBox Test APKs
+# Build trigger: TMDB secret configured
 
 on:
   workflow_dispatch:
