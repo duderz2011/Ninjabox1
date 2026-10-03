@@ -129,7 +129,7 @@ private fun BrandLoading() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(R.drawable.ninjabox_mark),
+                painter = painterResource(R.drawable.ninja_logo),
                 contentDescription = "NinjaBox",
                 modifier = Modifier.size(210.dp).clip(RoundedCornerShape(26.dp))
             )
@@ -164,7 +164,7 @@ private fun LoginScreen(
         ) {
             Column(Modifier.padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Image(
-                    painter = painterResource(R.drawable.ninjabox_mark),
+                    painter = painterResource(R.drawable.ninja_logo),
                     contentDescription = "NinjaBox",
                     modifier = Modifier.size(180.dp).clip(RoundedCornerShape(22.dp))
                 )
@@ -279,7 +279,7 @@ private fun TopBrandBar(username: String, onLogout: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(R.drawable.ninjabox_mark),
+            painter = painterResource(R.drawable.ninja_logo),
             contentDescription = null,
             modifier = Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))
         )
