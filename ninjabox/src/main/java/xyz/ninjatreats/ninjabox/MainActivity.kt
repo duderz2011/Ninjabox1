@@ -24,10 +24,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -148,9 +154,33 @@ private fun LoginScreen(
     var username by remember { mutableStateOf(initialUsername) }
     var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var loginFocused by remember { mutableStateOf(false) }
+
+    val usernameFocus = remember { FocusRequester() }
+    val passwordFocus = remember { FocusRequester() }
+    val loginFocus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
+    fun submitLogin() {
+        if (busy || username.isBlank() || password.isBlank()) return
+        keyboard?.hide()
+        focusManager.clearFocus(force = true)
+        busy = true
+        onLogin(username, password)
+    }
+
+    fun focusLoginButton() {
+        keyboard?.hide()
+        focusManager.clearFocus(force = true)
+        loginFocus.requestFocus()
+    }
 
     LaunchedEffect(error) {
-        if (!error.isNullOrBlank()) busy = false
+        if (!error.isNullOrBlank()) {
+            busy = false
+            passwordFocus.requestFocus()
+        }
     }
 
     Box(
@@ -178,7 +208,17 @@ private fun LoginScreen(
                     onValueChange = { username = it },
                     label = { Text("Username") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocus.requestFocus() }
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(usernameFocus)
+                        .focusProperties {
+                            down = passwordFocus
+                            next = passwordFocus
+                        }
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
@@ -188,13 +228,18 @@ private fun LoginScreen(
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        if (!busy && username.isNotBlank() && password.isNotBlank()) {
-                            busy = true
-                            onLogin(username, password)
+                    keyboardActions = KeyboardActions(
+                        onDone = { submitLogin() },
+                        onNext = { submitLogin() }
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocus)
+                        .focusProperties {
+                            up = usernameFocus
+                            down = loginFocus
+                            next = loginFocus
                         }
-                    }),
-                    modifier = Modifier.fillMaxWidth()
                 )
                 if (!error.isNullOrBlank()) {
                     Spacer(Modifier.height(12.dp))
@@ -202,12 +247,19 @@ private fun LoginScreen(
                 }
                 Spacer(Modifier.height(20.dp))
                 Button(
-                    onClick = {
-                        busy = true
-                        onLogin(username, password)
-                    },
+                    onClick = { submitLogin() },
                     enabled = !busy && username.isNotBlank() && password.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth().height(54.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp)
+                        .focusRequester(loginFocus)
+                        .focusProperties { up = passwordFocus }
+                        .onFocusChanged { loginFocused = it.isFocused }
+                        .border(
+                            width = if (loginFocused) 3.dp else 0.dp,
+                            color = NinjaWhite,
+                            shape = RoundedCornerShape(28.dp)
+                        )
                 ) {
                     if (busy) {
                         CircularProgressIndicator(
@@ -217,6 +269,13 @@ private fun LoginScreen(
                         )
                     } else {
                         Text("OPEN NINJABOX", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (!busy && username.isNotBlank() && password.isNotBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = { focusLoginButton() }) {
+                        Text("Fire TV: press Next/Done to sign in", color = NinjaMuted)
                     }
                 }
             }
