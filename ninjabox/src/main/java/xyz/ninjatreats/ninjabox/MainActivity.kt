@@ -41,6 +41,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -151,36 +152,11 @@ private fun LoginScreen(
     error: String?,
     onLogin: (String, String) -> Unit,
 ) {
-    var username by remember { mutableStateOf(initialUsername) }
-    var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
-    var loginFocused by remember { mutableStateOf(false) }
-
-    val usernameFocus = remember { FocusRequester() }
-    val passwordFocus = remember { FocusRequester() }
-    val loginFocus = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
-    val keyboard = LocalSoftwareKeyboardController.current
-
-    fun submitLogin() {
-        if (busy || username.isBlank() || password.isBlank()) return
-        keyboard?.hide()
-        focusManager.clearFocus(force = true)
-        busy = true
-        onLogin(username, password)
-    }
-
-    fun focusLoginButton() {
-        keyboard?.hide()
-        focusManager.clearFocus(force = true)
-        loginFocus.requestFocus()
-    }
+    val currentOnLogin by rememberUpdatedState(onLogin)
 
     LaunchedEffect(error) {
-        if (!error.isNullOrBlank()) {
-            busy = false
-            passwordFocus.requestFocus()
-        }
+        if (!error.isNullOrBlank()) busy = false
     }
 
     Box(
@@ -201,82 +177,195 @@ private fun LoginScreen(
                 Spacer(Modifier.height(12.dp))
                 Text("NinjaBox", fontSize = 34.sp, fontWeight = FontWeight.Black)
                 Text("Sign in to continue", color = NinjaMuted)
-                Spacer(Modifier.height(26.dp))
+                Spacer(Modifier.height(22.dp))
 
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(
-                        onNext = { passwordFocus.requestFocus() }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(usernameFocus)
-                        .focusProperties {
-                            down = passwordFocus
-                            next = passwordFocus
+                /*
+                 * Fire TV's on-screen keyboard does not reliably dispatch Compose IME
+                 * actions. Use native Android EditText controls here so Next/Go/Done
+                 * is handled by OnEditorActionListener on Fire OS as well as Android.
+                 */
+                AndroidView(
+                    modifier = Modifier.fillMaxWidth(),
+                    factory = { context ->
+                        val density = context.resources.displayMetrics.density
+                        fun dp(value: Int): Int = (value * density).toInt()
+                        fun hideKeyboard(view: android.view.View) {
+                            val imm = context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                                as android.view.inputmethod.InputMethodManager
+                            imm.hideSoftInputFromWindow(view.windowToken, 0)
                         }
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = { submitLogin() },
-                        onNext = { submitLogin() }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(passwordFocus)
-                        .focusProperties {
-                            up = usernameFocus
-                            down = loginFocus
-                            next = loginFocus
+
+                        val container = android.widget.LinearLayout(context).apply {
+                            orientation = android.widget.LinearLayout.VERTICAL
+                            layoutParams = android.widget.LinearLayout.LayoutParams(
+                                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
                         }
+
+                        val username = android.widget.EditText(context).apply {
+                            tag = "ninjabox_username"
+                            hint = "Username"
+                            setText(initialUsername)
+                            setTextColor(android.graphics.Color.WHITE)
+                            setHintTextColor(android.graphics.Color.rgb(180, 180, 188))
+                            textSize = 18f
+                            isSingleLine = true
+                            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_NEXT
+                            inputType = android.text.InputType.TYPE_CLASS_TEXT
+                            setPadding(dp(14), dp(8), dp(14), dp(8))
+                            backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                android.graphics.Color.rgb(229, 9, 20)
+                            )
+                        }
+
+                        val password = android.widget.EditText(context).apply {
+                            tag = "ninjabox_password"
+                            hint = "Password"
+                            setTextColor(android.graphics.Color.WHITE)
+                            setHintTextColor(android.graphics.Color.rgb(180, 180, 188))
+                            textSize = 18f
+                            isSingleLine = true
+
+                            // GO is more reliable than DONE on Fire TV keyboards, but the
+                            // listener below accepts every common action including NEXT.
+                            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_GO
+                            inputType =
+                                android.text.InputType.TYPE_CLASS_TEXT or
+                                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                            transformationMethod =
+                                android.text.method.PasswordTransformationMethod.getInstance()
+                            setPadding(dp(14), dp(8), dp(14), dp(8))
+                            backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                android.graphics.Color.rgb(229, 9, 20)
+                            )
+                        }
+
+                        val loginButton = android.widget.Button(context).apply {
+                            tag = "ninjabox_login"
+                            text = "OPEN NINJABOX"
+                            textSize = 17f
+                            setTextColor(android.graphics.Color.WHITE)
+                            isAllCaps = true
+                            isFocusable = true
+                            isFocusableInTouchMode = true
+                            backgroundTintList = android.content.res.ColorStateList.valueOf(
+                                android.graphics.Color.rgb(229, 9, 20)
+                            )
+                            setOnFocusChangeListener { view, hasFocus ->
+                                view.alpha = if (hasFocus) 1.0f else 0.88f
+                                view.scaleX = if (hasFocus) 1.03f else 1.0f
+                                view.scaleY = if (hasFocus) 1.03f else 1.0f
+                            }
+                        }
+
+                        fun submit(): Boolean {
+                            val u = username.text?.toString()?.trim().orEmpty()
+                            val p = password.text?.toString().orEmpty()
+                            if (busy || u.isBlank() || p.isBlank()) return false
+
+                            hideKeyboard(password)
+                            password.clearFocus()
+                            loginButton.requestFocus()
+                            busy = true
+                            currentOnLogin(u, p)
+                            return true
+                        }
+
+                        username.setOnEditorActionListener { _, actionId, event ->
+                            val enter =
+                                event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER &&
+                                event.action == android.view.KeyEvent.ACTION_DOWN
+                            val next =
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND
+                            if (enter || next) {
+                                password.requestFocus()
+                                true
+                            } else {
+                                false
+                            }
+                        }
+
+                        password.setOnEditorActionListener { _, actionId, event ->
+                            val enter =
+                                event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER &&
+                                event.action == android.view.KeyEvent.ACTION_DOWN
+
+                            /*
+                             * Some Fire TV keyboard versions incorrectly report NEXT or
+                             * UNSPECIFIED for the final field. Treat them as Sign In.
+                             */
+                            val submitAction =
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_UNSPECIFIED
+
+                            if (enter || submitAction) submit() else false
+                        }
+
+                        password.setOnKeyListener { _, keyCode, keyEvent ->
+                            if (
+                                keyEvent.action == android.view.KeyEvent.ACTION_UP &&
+                                (
+                                    keyCode == android.view.KeyEvent.KEYCODE_ENTER ||
+                                    keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
+                                    keyCode == android.view.KeyEvent.KEYCODE_NUMPAD_ENTER
+                                )
+                            ) {
+                                submit()
+                                true
+                            } else {
+                                false
+                            }
+                        }
+
+                        loginButton.setOnClickListener { submit() }
+
+                        val fieldParams = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                            dp(56)
+                        )
+
+                        val passwordParams = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                            dp(56)
+                        ).apply {
+                            topMargin = dp(12)
+                        }
+
+                        val buttonParams = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                            dp(58)
+                        ).apply {
+                            topMargin = dp(20)
+                        }
+
+                        container.addView(username, fieldParams)
+                        container.addView(password, passwordParams)
+                        container.addView(loginButton, buttonParams)
+
+                        username.post {
+                            if (initialUsername.isBlank()) username.requestFocus()
+                            else password.requestFocus()
+                        }
+
+                        container
+                    },
+                    update = { container ->
+                        val button = container.findViewWithTag<android.widget.Button>("ninjabox_login")
+                        button?.isEnabled = !busy
+                        button?.text = if (busy) "SIGNING IN…" else "OPEN NINJABOX"
+                    }
                 )
+
                 if (!error.isNullOrBlank()) {
                     Spacer(Modifier.height(12.dp))
                     Text(error, color = Color(0xFFFF8A8A))
-                }
-                Spacer(Modifier.height(20.dp))
-                Button(
-                    onClick = { submitLogin() },
-                    enabled = !busy && username.isNotBlank() && password.isNotBlank(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp)
-                        .focusRequester(loginFocus)
-                        .focusProperties { up = passwordFocus }
-                        .onFocusChanged { loginFocused = it.isFocused }
-                        .border(
-                            width = if (loginFocused) 3.dp else 0.dp,
-                            color = NinjaWhite,
-                            shape = RoundedCornerShape(28.dp)
-                        )
-                ) {
-                    if (busy) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White
-                        )
-                    } else {
-                        Text("OPEN NINJABOX", fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                if (!busy && username.isNotBlank() && password.isNotBlank()) {
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = { focusLoginButton() }) {
-                        Text("Fire TV: press Next/Done to sign in", color = NinjaMuted)
-                    }
                 }
             }
         }
